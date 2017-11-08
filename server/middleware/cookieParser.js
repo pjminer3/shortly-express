@@ -6,18 +6,25 @@ const parseCookies = (req, res, next) => {
   if (Object.keys(req.headers).length === 0) {
     // create new session 
     // Create shortlyid that is put into the database and sent back to client via the response object 
-    auth.createSession(req, res, next);
+    //auth.createSession(req, res, next);
   } else {
-    var cookies = req.headers.cookie.split(';');
-    var cookieObj = {};
-    var tuples = _.map(cookies, cookie => {
-      return cookie.split('=');
-    });
-    tuples.forEach(cookie => {
-      cookieObj[cookie[0].trim()] = cookie[1];
-    });
+    if(req.headers.cookie) {
+      if(req.headers.cookie.indexOf(';') > 0) {
+        var cookies = req.headers.cookie.split(';');
+      } else {
+        var cookies = [req.headers.cookie];
+      }
+      var cookieObj = {};
+      var tuples = _.map(cookies, cookie => {
+        return cookie.split('=');
+      });
+      tuples.forEach(cookie => {
+        cookieObj[cookie[0].trim()] = cookie[1];
+      });
 
-    req.cookies = cookieObj;
+      req.cookies = cookieObj;
+    }
+
   }
 
   next();

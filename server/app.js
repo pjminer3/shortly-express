@@ -5,6 +5,7 @@ const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
 const models = require('./models');
+var cookieParse = require('./middleware/cookieParser.js');
 
 const app = express();
 
@@ -17,83 +18,101 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 
 
-app.get('/',
-  (req, res, next) => {
-    // if there is a open session
-    // we have verified it
-    res.render('index');
-
-    // else
-    // res.render login
+app.get('/', (req, res, next) => {
+  console.log('RUNNING get /');
+  cookieParse(req, res, function() {
+    Auth.createSession(req, res, function() {
+      if(models.Sessions.isLoggedIn(req.session)) {
+        res.render('index');
+      } else {
+        res.render('login');
+      }
+    });
   });
 
-app.get('/create',
-  (req, res) => {
-    res.render('index');
+});
+
+app.get('/create', (req, res) => {
+  console.log('RUNNING get /');
+  cookieParse(req, res, function() {
+    Auth.createSession(req, res, function() {
+      if(models.Sessions.isLoggedIn(req.session)) {
+        res.render('index');
+      } else {
+        res.render('login');
+      }
+    });
   });
 
-app.get('/links',
-  (req, res, next) => {
-    models.Links.getAll()
-      .then(links => {
-        res.status(200).send(links);
-      })
-      .error(error => {
-        res.status(500).send(error);
-      });
-  });
+});
 
-app.post('/links',
-  (req, res, next) => {
-    var url = req.body.url;
-    if (!models.Links.isValidUrl(url)) {
-      // send back a 404 if link is not valid
-      return res.sendStatus(404);
-    }
+app.get('/links', (req, res, next) => {
+  console.log('RUNNING get /links');
+  models.Links.getAll()
+    .then(links => {
+      res.status(200).send(links);
+    })
+    .error(error => {
+      res.status(500).send(error);
+    });
+});
 
-    return models.Links.get({ url })
-      .then(link => {
-        if (link) {
-          throw link;
-        }
-        return models.Links.getUrlTitle(url);
-      })
-      .then(title => {
-        return models.Links.create({
-          url: url,
-          title: title,
-          baseUrl: req.headers.origin
-        });
-      })
-      .then(results => {
-        return models.Links.get({ id: results.insertId });
-      })
-      .then(link => {
+app.post('/links', (req, res, next) => {
+  console.log('RUNNING post /links');
+  var url = req.body.url;
+  if (!models.Links.isValidUrl(url)) {
+    // send back a 404 if link is not valid
+    return res.sendStatus(404);
+  }
+
+  return models.Links.get({ url })
+    .then(link => {
+      if (link) {
         throw link;
-      })
-      .error(error => {
-        res.status(500).send(error);
-      })
-      .catch(link => {
-        res.status(200).send(link);
+      }
+      return models.Links.getUrlTitle(url);
+    })
+    .then(title => {
+      return models.Links.create({
+        url: url,
+        title: title,
+        baseUrl: req.headers.origin
       });
-  });
+    })
+    .then(results => {
+      return models.Links.get({ id: results.insertId });
+    })
+    .then(link => {
+      throw link;
+    })
+    .error(error => {
+      res.status(500).send(error);
+    })
+    .catch(link => {
+      res.status(200).send(link);
+    });
+});
 
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
 
 app.get('/login', (req, res, next) => {
+  console.log('RUNNING get /login');
   res.render('login');
 });
 
 app.get('/signup', (req, res, next) => {
+  console.log('RUNNING get /signup');
   res.render('signup');
 });
 
 
 
 app.post('/login', (req, res, next) => {
+
+  
+  console.log('RUNNING post /login');
   // make options
   let options = {
     username: req.body.username
@@ -104,7 +123,7 @@ app.post('/login', (req, res, next) => {
     // if exists, check to make sure their password matches the password in db
     if (record !== undefined) {
       if (models.Users.compare(req.body.password, record.password, record.salt)) {
-        // send to index
+        // create a session
         res.redirect('/');
       } else {
         // send back to login bc bad password
@@ -114,15 +133,12 @@ app.post('/login', (req, res, next) => {
       // if user doesn't exist send back to login
       res.redirect('/login');
     }
-  })/*.catch(err => {
-      console.log(err);
-      // if user doesn't exist send back to login
-      res.redirect('/login');
-    })*/;
+  });
 });
 
 // creates new user => if user exists; redirect back to signup page
 app.post('/signup', (req, res, next) => {
+  console.log('RUNNING post /signup');
   models.Users.create(req.body).then((resolved) => {
     res.redirect('/');
   }).catch(err => {
@@ -140,7 +156,7 @@ app.post('/signup', (req, res, next) => {
 /************************************************************/
 
 app.get('/:code', (req, res, next) => {
-
+  console.log('RUNNING get /code');
   return models.Links.get({ code: req.params.code })
     .tap(link => {
 

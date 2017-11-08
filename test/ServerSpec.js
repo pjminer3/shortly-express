@@ -5,7 +5,7 @@ var httpMocks = require('node-mocks-http');
 
 var app = require('../server/app.js');
 var schema = require('../server/db/config.js');
-var port = 8080;
+var port = 4568;
 
 /************************************************************/
 // Mocha doesn't have a way to designate pending before blocks.
@@ -398,7 +398,6 @@ describe('', function() {
       });
 
       it('assigns a session object to the request if a session already exists', function(done) {
-
         var requestWithoutCookie = httpMocks.createRequest();
         var response = httpMocks.createResponse();
 
@@ -442,20 +441,23 @@ describe('', function() {
 
         db.query('INSERT INTO users (username) VALUES (?)', username, function(error, results) {
           if (error) { return done(error); }
+          // Now we have record in users with name: BillZito and an id
           var userId = results.insertId;
+          // assign userID to Blitzo's id
 
           createSession(requestWithoutCookie, response, function() {
             var hash = requestWithoutCookie.session.hash;
             db.query('UPDATE sessions SET userId = ? WHERE hash = ?', [userId, hash], function(error, result) {
+              // updates sessions table with a unique ID, the uniq hash generated, and blitzo's userId
 
               var secondResponse = httpMocks.createResponse();
               var requestWithCookies = httpMocks.createRequest();
               requestWithCookies.cookies.shortlyid = hash;
+              // we assign the request.cookies.shortlyid to the hash in the sessions table
 
               createSession(requestWithCookies, secondResponse, function() {
-                console.log('TEST COOKIES: ', requestWithCookies.cookies);
                 var session = requestWithCookies.session;
-                console.log('TEST SESSION: ', session);
+
                 expect(session).to.be.an('object');
                 expect(session.user.username).to.eq(username);
                 expect(session.userId).to.eq(userId);
@@ -482,7 +484,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Sessions and cookies', function() {
+  describe('Sessions and cookies', function() {
     var requestWithSession;
     var cookieJar;
 
