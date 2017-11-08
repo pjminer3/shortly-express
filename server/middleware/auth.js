@@ -63,6 +63,7 @@ module.exports.createSession = (req, res, next) => {
 function createSessionAndPost (req, res, next) {
   models.Sessions.create().then( insertRes => {
         //console.log('INSERTED ROW: ', insertRes);
+    console.log('We are in createSessionAndPost');
     return models.Sessions.get({id: insertRes.insertId});
   }).then( record => {
         // adding session to request
@@ -70,6 +71,7 @@ function createSessionAndPost (req, res, next) {
         // adding cookie to response
     res.cookies = {shortlyid: {value: record.hash}};
     res.cookie('shortlyid', record.hash);
+    console.log('Browser has cookie');
     next();
   });
 }

@@ -3,6 +3,8 @@ var auth = require('./auth');
 
 const parseCookies = (req, res, next) => {
   // if request doesn't have any cookies 
+  console.log('Beginning of Cookieparse');
+  console.log('THIS IS THE HEADERS: ', req.headers);
   if (Object.keys(req.headers).length === 0) {
     // create new session 
     // Create shortlyid that is put into the database and sent back to client via the response object 

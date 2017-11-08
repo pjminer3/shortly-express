@@ -534,6 +534,7 @@ describe('', function() {
       addUser(function(err, res, body) {
         if (err) { return done(err); }
         var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+        console.log('THESE ARE COOKIES: ', cookies);
         var cookieValue = cookies[0].value;
 
         var queryString = `
